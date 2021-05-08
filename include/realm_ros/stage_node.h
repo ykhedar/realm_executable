@@ -48,6 +48,7 @@ class StageNode
     StageNode();
     ~StageNode();
     void spin(const Frame::Ptr &frame);
+    StageBase::Ptr pose_stage;
   private:
     // Set to true, to shut node down
     std::mutex _mutex_do_shutdown;
@@ -83,41 +84,19 @@ class StageNode
     CameraSettings::Ptr _settings_camera;
 
     // Handle for stage
-    StageBase::Ptr pose_stage;
-    StageBase::Ptr dense_stage;
     StageBase::Ptr surface_stage;
     StageBase::Ptr ortho_stage;
-    StageBase::Ptr mosaic_stage;
     StageBase::Ptr tiling_stage;
 
     std::vector<StageBase::Ptr> all_stages;
-
 
     // Initialization
     StageSettings::Ptr readStageSettings(std::string type_stage);
     void setPaths();
     void createStagePoseEstimation(std::string type_stage);
-    void createStageDensification(std::string type_stage);
     void createStageSurfaceGeneration(std::string type_stage);
     void createStageOrthoRectification(std::string type_stage);
-    void createStageMosaicing(std::string type_stage);
     void createStageTileing(std::string type_stage);
-
-    // Frame Transports
-    void pubFramePoseToDense(const Frame::Ptr &frame, const std::string &topic);
-    void pubFrameDenseToSurface(const Frame::Ptr &frame, const std::string &topic);
-    void pubFrameSurfaceToOrtho(const Frame::Ptr &frame, const std::string &topic);
-    void pubFrameOrthoToMosaic(const Frame::Ptr &frame, const std::string &topic);
-    void pubFrameMosaicToTiling(const Frame::Ptr &frame, const std::string &topic);
-    void pubFrameTilingToNone(const Frame::Ptr &frame, const std::string &topic);
-
-    // Other message transports. Just dummy functions to pass onto the stages so they dont complain.
-    void pubPose(const cv::Mat &pose, uint8_t zone, char band, const std::string &topic);
-    void pubPointCloud(const cv::Mat &pts, const std::string &topic);
-    void pubDepthMap(const cv::Mat &img, const std::string &topic);
-    void pubImage(const cv::Mat &img, const std::string &topic);
-    void pubMesh(const std::vector<Face> &faces, const std::string &topic);
-    void pubCvGridMap(const CvGridMap &map, uint8_t zone, char band, const std::string &topic);
 
     void linkStageTransport();
 };

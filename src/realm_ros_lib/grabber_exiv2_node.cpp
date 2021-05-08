@@ -19,6 +19,8 @@
 */
 
 #include <realm_ros/grabber_exiv2_node.h>
+#include <chrono>
+#include <thread>
 
 using namespace realm;
 

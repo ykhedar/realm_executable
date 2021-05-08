@@ -20,7 +20,8 @@
 
 #include <realm_ros/stage_node.h>
 #include <realm_ros/grabber_exiv2_node.h>
-
+#include <chrono>
+#include <thread>
 
 using namespace realm;
 
@@ -33,10 +34,10 @@ int main(int argc, char **argv)
     Frame::Ptr frame = exiv_grabber_node.spin();
     if(frame != nullptr) 
     {
-      std::cout << "GOT FRAME" << std::endl;
-      stage_node.spin(frame);
+      stage_node.pose_stage->addFrame(std::move(frame));
     } 
     else { std::cout << "NULL POINTER" << std::endl; }
+    std::this_thread::sleep_for (std::chrono::milliseconds(100));
   } 
   
   return 0;
