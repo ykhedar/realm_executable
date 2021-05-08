@@ -33,18 +33,19 @@ StageNode::StageNode()
 
   // Create stages
   createStagePoseEstimation("pose_estimation");
-  createStageSurfaceGeneration("surface_generation");
-  createStageOrthoRectification("ortho_rectification");
-  createStageTileing("tileing");
+  //createStageSurfaceGeneration("surface_generation");
+  //createStageOrthoRectification("ortho_rectification");
+  //createStageTileing("tileing");
 
   // Link the stage transport of all nodes.
-  linkStageTransport();
+  //linkStageTransport();
 
   // add all stages to the vector
   all_stages.push_back(pose_stage);
-  all_stages.push_back(surface_stage);
-  all_stages.push_back(ortho_stage);
-  all_stages.push_back(tiling_stage);
+  //all_stages.push_back(surface_stage);
+  //all_stages.push_back(ortho_stage);
+  //all_stages.push_back(tiling_stage);
+  startStages();
 }
 
 StageNode::~StageNode()
@@ -105,17 +106,14 @@ void StageNode::createStagePoseEstimation(std::string type_stage)
   
   std::string method("open_vslam"); // open_vslam,  orb_slam3
   std::string file_settings_method = _path_profile + "/" + type_stage + "/method/" + method + "_settings.yaml";
+  
   // Pose estimation uses external frameworks, therefore load settings for that
   VisualSlamSettings::Ptr settings_vslam = VisualSlamSettingsFactory::load(file_settings_method, _path_profile + "/" + type_stage + "/method");
 
   // Topic and stage creation
   pose_stage = std::make_shared<stages::PoseEstimation>(settings_stage, settings_vslam, _settings_camera, settings_imu, (*_settings_camera)["fps"].toDouble());
   pose_stage->registerFrameTransport([=](const realm::Frame::Ptr & frame, const std::string &topic) {surface_stage->addFrame(std::move(frame));});
-  
-  if (!io::dirExists(_path_output + "/" + _dir_date_time))
-      io::createDir(_path_output + "/" + _dir_date_time);
-  pose_stage->initStagePath(_path_output + "/" + _dir_date_time);
-  pose_stage->start();
+  linkStageTransport(pose_stage);
 }
 
 void StageNode::createStageSurfaceGeneration(std::string type_stage)
@@ -124,11 +122,7 @@ void StageNode::createStageSurfaceGeneration(std::string type_stage)
   StageSettings::Ptr settings_stage = readStageSettings(type_stage);
   surface_stage = std::make_shared<stages::SurfaceGeneration>(settings_stage, (*_settings_camera)["fps"].toDouble());
   surface_stage->registerFrameTransport([=](const realm::Frame::Ptr & frame, const std::string &topic) {ortho_stage->addFrame(std::move(frame));});
-
-  if (!io::dirExists(_path_output + "/" + _dir_date_time))
-      io::createDir(_path_output + "/" + _dir_date_time);
-  surface_stage->initStagePath(_path_output + "/" + _dir_date_time);
-  surface_stage->start();
+  linkStageTransport(surface_stage);
 }
 
 void StageNode::createStageOrthoRectification(std::string type_stage)
@@ -137,10 +131,7 @@ void StageNode::createStageOrthoRectification(std::string type_stage)
   StageSettings::Ptr settings_stage = readStageSettings(type_stage);
   ortho_stage = std::make_shared<stages::OrthoRectification>(settings_stage, (*_settings_camera)["fps"].toDouble());
   ortho_stage->registerFrameTransport([=](const realm::Frame::Ptr & frame, const std::string &topic) {tiling_stage->addFrame(std::move(frame));});
-  if (!io::dirExists(_path_output + "/" + _dir_date_time))
-      io::createDir(_path_output + "/" + _dir_date_time);
-  ortho_stage->initStagePath(_path_output + "/" + _dir_date_time);
-  ortho_stage->start();
+  linkStageTransport(ortho_stage);
 }
 
 void StageNode::createStageTileing(std::string type_stage)
@@ -149,34 +140,33 @@ void StageNode::createStageTileing(std::string type_stage)
   StageSettings::Ptr settings_stage = readStageSettings(type_stage);
 
   tiling_stage = std::make_shared<stages::Tileing>(settings_stage, (*_settings_camera)["fps"].toDouble());
-  
   tiling_stage->registerFrameTransport([=](const realm::Frame::Ptr & frame, const std::string &topic) {std::cout << "Hi" << std::endl;});
-
-  if (!io::dirExists(_path_output + "/" + _dir_date_time))
-      io::createDir(_path_output + "/" + _dir_date_time);
-  tiling_stage->initStagePath(_path_output + "/" + _dir_date_time);
-  tiling_stage->start();
+  linkStageTransport(tiling_stage);
 }
 
-void StageNode::spin(const Frame::Ptr &frame)
-{
-  //pose_stage->addFrame(frame);
-  //_nrof_msgs_rcvd++;
+void StageNode::linkStageTransport(const StageBase::Ptr &stage)
+{  
+  // Start the thread for processing
+  stage->registerPoseTransport([=](const cv::Mat &pose, uint8_t zone, char band, const std::string &topic) {std::cout << topic << std::endl;});
+  stage->registerPointCloudTransport([=](const cv::Mat &pts, const std::string &topic) {std::cout << topic << std::endl;});
+  stage->registerImageTransport([=](const cv::Mat &img, const std::string &topic) {std::cout << topic << std::endl;});
+  stage->registerDepthMapTransport([=](const cv::Mat &img, const std::string &topic) {std::cout << topic << std::endl;});
+  stage->registerMeshTransport([=](const std::vector<Face> &faces, const std::string &topic) {std::cout << topic << std::endl;});
+  stage->registerCvGridMapTransport([=](const CvGridMap &map, uint8_t zone, char band, const std::string &topic) {std::cout << topic << std::endl;});
 }
 
-void StageNode::linkStageTransport()
+void StageNode::startStages()
 {  
   // Start the thread for processing
   for (size_t i = 0; i < all_stages.size(); i++)
   {
     StageBase::Ptr stage = all_stages[i];
+    
+    if (!io::dirExists(_path_output + "/" + _dir_date_time))
+      io::createDir(_path_output + "/" + _dir_date_time);
 
-    stage->registerPoseTransport([=](const cv::Mat &pose, uint8_t zone, char band, const std::string &topic) {std::cout << topic << std::endl;});
-    stage->registerPointCloudTransport([=](const cv::Mat &pts, const std::string &topic) {std::cout << topic << std::endl;});
-    stage->registerImageTransport([=](const cv::Mat &img, const std::string &topic) {std::cout << topic << std::endl;});
-    stage->registerDepthMapTransport([=](const cv::Mat &img, const std::string &topic) {std::cout << topic << std::endl;});
-    stage->registerMeshTransport([=](const std::vector<Face> &faces, const std::string &topic) {std::cout << topic << std::endl;});
-    stage->registerCvGridMapTransport([=](const CvGridMap &map, uint8_t zone, char band, const std::string &topic) {std::cout << topic << std::endl;});
+    stage->initStagePath(_path_output + "/" + _dir_date_time);
+    stage->start();
   }
 }
 

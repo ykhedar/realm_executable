@@ -47,7 +47,6 @@ class StageNode
   public:
     StageNode();
     ~StageNode();
-    void spin(const Frame::Ptr &frame);
     StageBase::Ptr pose_stage;
   private:
     // Set to true, to shut node down
@@ -98,7 +97,8 @@ class StageNode
     void createStageOrthoRectification(std::string type_stage);
     void createStageTileing(std::string type_stage);
 
-    void linkStageTransport();
+    void linkStageTransport(const StageBase::Ptr &stage);
+    void startStages();
 };
 } // namespace realm
 
