@@ -72,7 +72,7 @@ StageSettings::Ptr StageNode::readStageSettings(std::string type_stage)
 void StageNode::setPaths()
 {
   //_path_output = "uninitialised";
-  _profile = "alexa_noreco";
+  _profile = "alexa_gnss";
   _method = "uninitialised";
   _path_working_directory = ".";
   _id_camera = "cam";
