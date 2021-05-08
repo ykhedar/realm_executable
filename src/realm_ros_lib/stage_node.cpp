@@ -30,8 +30,6 @@ StageNode::StageNode()
 {
   // Read basic launch file inputs
   setPaths();
-  
-  _settings_camera = CameraSettingsFactory::load(_file_settings_camera);
 
   // Create stages
   createStagePoseEstimation("pose_estimation");
@@ -75,21 +73,12 @@ void StageNode::setPaths()
   //_path_output = "uninitialised";
   _profile = "alexa_noreco";
   _method = "uninitialised";
-  _path_working_directory = "uninitialised";
-  _path_output = "uninitialised";
+  _path_working_directory = ".";
   _id_camera = "cam";
-  
-  if (_path_working_directory == "uninitialised")
-    _path_working_directory = ".";
   _path_profile = _path_working_directory + "/profiles/" + _profile;
-
-  if (_path_output == "uninitialised")
-    _path_output = _path_working_directory + "/output";
-
-  // Set settings filepaths
+  _path_output = _path_working_directory + "/output";
   _file_settings_camera = _path_profile + "/camera/calib.yaml";
   
-
   if (!io::dirExists(_path_profile))
     throw(std::runtime_error("Error: Profile folder '" + _path_profile + "' was not found!"));
   if (!io::dirExists(_path_output))
@@ -99,6 +88,8 @@ void StageNode::setPaths()
   _dir_date_time = io::getDateTime();
   if (!io::dirExists(_path_output + "/" + _dir_date_time))
     io::createDir(_path_output + "/" + _dir_date_time);
+  
+  _settings_camera = CameraSettingsFactory::load(_file_settings_camera);
 }
 
 void StageNode::createStagePoseEstimation(std::string type_stage)
@@ -111,6 +102,7 @@ void StageNode::createStagePoseEstimation(std::string type_stage)
     settings_imu = std::make_shared<ImuSettings>();
     settings_imu->loadFromFile(_file_settings_imu);
   }
+  
   std::string method("open_vslam"); // open_vslam,  orb_slam3
   std::string file_settings_method = _path_profile + "/" + type_stage + "/method/" + method + "_settings.yaml";
   // Pose estimation uses external frameworks, therefore load settings for that
