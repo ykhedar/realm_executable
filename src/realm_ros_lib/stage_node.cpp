@@ -33,18 +33,18 @@ StageNode::StageNode()
 
   // Create stages
   createStagePoseEstimation("pose_estimation");
-  //createStageSurfaceGeneration("surface_generation");
-  //createStageOrthoRectification("ortho_rectification");
-  //createStageTileing("tileing");
+  createStageSurfaceGeneration("surface_generation");
+  createStageOrthoRectification("ortho_rectification");
+  createStageTileing("tileing");
 
   // Link the stage transport of all nodes.
   //linkStageTransport();
 
   // add all stages to the vector
   all_stages.push_back(pose_stage);
-  //all_stages.push_back(surface_stage);
-  //all_stages.push_back(ortho_stage);
-  //all_stages.push_back(tiling_stage);
+  all_stages.push_back(surface_stage);
+  all_stages.push_back(ortho_stage);
+  all_stages.push_back(tiling_stage);
   startStages();
 }
 
